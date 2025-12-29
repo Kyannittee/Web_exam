@@ -1,0 +1,18 @@
+{
+ "doctype-first": true,
+ "title-require": true,
+ "style-disabled": true,
+ "inline-style-disabled": true,
+ "tagname-lowercase": true,
+ "inline-script-disabled": true,
+ "attr-lowercase": true,
+ "attr-value-double-quotes": true,
+ "attr-no-duplication": true,
+ "attr-no-unnecessary-whitespace": true,
+ "tag-pair": true,
+ "spec-char-escape": true,
+ "id-unique": true,
+ "src-not-empty": true,
+ "indent-style": "spaces",
+  "indent-width": 4
+}
