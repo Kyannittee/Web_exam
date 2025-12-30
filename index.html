@@ -3,10 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мой экзаменационный проект</title>
+    <title>EasyLang</title>
+    
+    <!-- Bootstrap 5.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <!-- Наши стили -->
+    <link rel="stylesheet" href="styles/colors.css">
+    <link rel="stylesheet" href="styles/main.css">
 </head>
-<body>
-    <h1>Привет, мир!</h1>
-    <p>Мой первый коммит через VSCode</p>
+<body class="bg-light">
+    <!-- Область уведомлений -->
+    <div id="notification-area" class="notification-area"></div>
+    
+    <!-- Шапка (вставится через JS) -->
+    <header id="header"></header>
+    
+    <!-- Основной контент -->
+    <main class="container py-4">
+        <div id="main-content">
+            <!-- Сюда будет подгружаться контент -->
+        </div>
+    </main>
+    
+    <!-- Футер (вставится через JS) -->
+    <footer id="footer" class="bg-dark text-white py-4 mt-5"></footer>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Наши скрипты -->
+    <script src="scripts/components.js"></script>
+    <script src="scripts/utils.js"></script>
+    <script src="scripts/api.js"></script>
+    <script src="scripts/main.js"></script>
+    
+    <script>
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            // Инициализируем компоненты
+            if (typeof Components !== 'undefined') {
+                Components.init();
+            }
+            
+            // Загружаем главную страницу
+            if (typeof Main !== 'undefined') {
+                Main.init();
+            }
+        });
+    </script>
 </body>
 </html>

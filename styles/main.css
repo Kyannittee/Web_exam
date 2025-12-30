@@ -1,0 +1,14 @@
+.notification-area {
+    position: fixed;
+    top: 0;
+    right: 0;
+    padding: 1rem;
+    z-index: 1050;
+}
+
+.footer-custom {
+    background-color: var(--deep-blue);
+    color: white;
+    padding: 2rem 0;
+    margin-top: 3rem;
+}
