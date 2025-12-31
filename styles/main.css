@@ -1,3 +1,5 @@
+
+/* Область уведомлений */
 .notification-area {
     position: fixed;
     top: 0;
@@ -6,9 +8,75 @@
     z-index: 1050;
 }
 
+/* Футер */
 .footer-custom {
     background-color: var(--deep-blue);
     color: white;
     padding: 2rem 0;
     margin-top: 3rem;
+}
+
+css
+/* Основные стили проекта */
+
+/* Область уведомлений */
+.notification-area {
+    position: fixed;
+    top: 0;
+    right: 0;
+    padding: 1rem;
+    z-index: 1050;
+}
+
+/* Футер */
+.footer-custom {
+    background-color: var(--deep-blue);
+    color: white;
+    padding: 2rem 0;
+    margin-top: 3rem;
+}
+
+/* Кастомные карточки */
+.card-custom {
+    border: 1px solid var(--sky-blue);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    background-color: white;
+}
+
+.card-custom:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(52, 152, 219, 0.15);
+    border-color: var(--ocean-blue);
+}
+
+/* Цвета для текста */
+.text-primary-dark {
+    color: var(--deep-blue) !important;
+}
+
+.text-ocean-blue {
+    color: var(--ocean-blue) !important;
+}
+
+.text-accent-teal {
+    color: var(--seafoam) !important;
+}
+
+/* Кнопки */
+.btn-accent {
+    background-color: var(--seafoam);
+    border-color: var(--seafoam);
+    color: white;
+}
+
+.btn-accent:hover {
+    background-color: #16a085;
+    border-color: #16a085;
+    color: white;
+}
+
+/* Фон */
+.bg-primary-light {
+    background-color: var(--foam-white) !important;
 }

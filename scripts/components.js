@@ -3,7 +3,7 @@
 // Объект Components для хранения всех компонентов
 const Components = {
     // Название школы
-    schoolName: 'EasyLnag',
+    schoolName: 'EasyLang',
     
     // Проверка активной страницы
     isActive: function(page) {
