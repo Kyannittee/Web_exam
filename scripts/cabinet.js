@@ -12,11 +12,29 @@ const Cabinet = {
     },
     
     // Загрузка заказов с API
-    loadOrders: function() {
-        console.log('Загрузка заказов...');
-        // TODO: Запрос к API /api/orders
-        // Временные данные для демонстрации
-        this.displayOrders(this.getMockOrders());
+    loadOrders: async function() {
+        try {
+            const orders = await Api.getOrders();
+            
+            // Преобразуем данные API в наш формат
+            const formattedOrders = orders.map(order => ({
+                id: order.id,
+                courseName: order.course_id ? 
+                    `Курс #${order.course_id}` : 
+                    `Репетитор #${order.tutor_id}`,
+                tutorName: 'Загружается...', // Можно доп. запросом получить имя
+                dateStart: order.date_start,
+                timeStart: order.time_start,
+                price: order.price,
+                status: 'active'
+            }));
+            
+            this.displayOrders(formattedOrders);
+            
+        } catch (error) {
+            console.log('Используем демо-данные');
+            this.displayOrders(this.getMockOrders());
+        }
     },
     
     // Временные данные (потом заменим на реальные с API)

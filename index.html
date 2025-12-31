@@ -53,5 +53,40 @@
             }
         });
     </script>
+    <script>
+    // Тест API после загрузки страницы
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Ждем немного чтобы все загрузилось
+        setTimeout(async () => {
+            if (typeof Api !== 'undefined') {
+                try {
+                    console.log('Тестируем подключение к API...');
+                    const courses = await Api.getCourses();
+                    console.log('API работает! Загружено курсов:', 
+                        courses.length);
+                    
+                    // Показываем уведомление
+                    if (typeof Utils !== 'undefined') {
+                        Utils.showNotification(
+                            `Загружено ${courses.length} курсов`, 
+                            'success'
+                        );
+                    }
+                    
+                } catch (error) {
+                    console.error('Ошибка подключения к API:', error);
+                    
+                    if (typeof Utils !== 'undefined') {
+                        Utils.showNotification(
+                            'Не удалось подключиться к API. ' +
+                            'Проверьте ключ и интернет.', 
+                            'error'
+                        );
+                    }
+                }
+            }
+        }, 1000);
+    });
+</script>
 </body>
 </html>
