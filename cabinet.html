@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет - ${Components.schoolName}</title>
+    
+    <!-- Bootstrap 5.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <!-- Стили -->
+    <link rel="stylesheet" href="styles/colors.css">
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body class="bg-light">
+    <!-- Область уведомлений -->
+    <div id="notification-area" class="notification-area"></div>
+    
+    <!-- Шапка -->
+    <header id="header"></header>
+    
+    <!-- Основной контент -->
+    <main class="container py-4">
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="index.html">Главная</a>
+                </li>
+                <li class="breadcrumb-item active">Личный кабинет</li>
+            </ol>
+        </nav>
+        
+        <h1 class="mb-4 text-primary-dark">
+            <i class="bi bi-person-circle me-2"></i>Личный кабинет
+        </h1>
+        
+        <!-- Таблица заказов -->
+        <section id="orders-section" class="mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="h4">Мои заявки</h2>
+                <span class="badge bg-accent-teal">Загружаем...</span>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover" id="orders-table">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Курс/Репетитор</th>
+                            <th>Дата начала</th>
+                            <th>Время</th>
+                            <th>Стоимость</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-body">
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Загрузка...</span>
+                                </div>
+                                <p class="mt-2">Загрузка заявок...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Пагинация (будет показана когда появятся данные) -->
+            <nav id="pagination-container" class="mt-4 d-none" 
+                 aria-label="Навигация по страницам">
+                <ul class="pagination justify-content-center" id="pagination">
+                    <!-- Пагинация будет сгенерирована через JS -->
+                </ul>
+            </nav>
+        </section>
+    </main>
+    
+    <!-- Футер -->
+    <footer id="footer" class="footer-custom"></footer>
+    
+    <!-- Модальные окна (будут созданы через JS) -->
+    <div id="modals-container"></div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Скрипты -->
+    <script src="scripts/components.js"></script>
+    <script src="scripts/utils.js"></script>
+    <script src="scripts/api.js"></script>
+    <script src="scripts/cabinet.js"></script>
+    
+    <script>
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            // Инициализируем компоненты
+            if (typeof Components !== 'undefined') {
+                Components.init();
+            }
+            
+            // Загружаем личный кабинет
+            if (typeof Cabinet !== 'undefined') {
+                Cabinet.init();
+            }
+        });
+    </script>
+</body>
+</html>
