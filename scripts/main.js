@@ -178,10 +178,15 @@ const Main = {
                                 </p>
                             </div>
                         </div>
-                        <div class="card-footer bg-transparent border-top-0">
-                            <button class="btn btn-accent w-100" 
-                                    onclick="Main.showCourseModal(` +
-                                    `${course.id})">
+                        <div class="card-footer bg-transparent">
+                            <button class="btn btn-accent w-100 mb-2" 
+                                    data-course-id="${course.id}"
+                                    onclick="Main.openCourseOrderModal(this)">
+                                <i class="bi bi-cart-plus me-1"></i>
+                                Подать заявку
+                            </button>
+                            <button class="btn btn-outline-primary w-100" 
+                                onclick="Main.showCourseModal(${course.id})">
                                 <i class="bi bi-info-circle me-1"></i>
                                 Подробнее
                             </button>
@@ -247,6 +252,13 @@ const Main = {
                                 ${tutor.price_per_hour} ₽/час
                             </td>
                             <td>
+                                <<button class="btn btn-sm btn-accent"
+                                        data-tutor-id="${tutor.id}"
+                                        onclick="Main.openTutorOrderModal(this)"
+                                        data-bs-toggle="tooltip" title=
+                                        "Выбрать репетитора">
+                                    <i class="bi bi-person-plus"></i>
+                                </button>
                                 <button class="btn btn-sm btn-outline-primary"
                                         onclick="Main.showTutorModal(${tutor
         .id})">
@@ -662,6 +674,28 @@ const Main = {
         });
         
         return this.filteredTutors;
+    },
+
+    openCourseOrderModal: function(button) {
+        var courseId = button.getAttribute('data-course-id');
+        var course = this.allCourses.find(function(c) {
+            return c.id == courseId;
+        });
+        
+        if (course && typeof Order !== 'undefined') {
+            Order.openCreateModal(course, 'course');
+        }
+    },
+
+    openTutorOrderModal: function(button) {
+        var tutorId = button.getAttribute('data-tutor-id');
+        var tutor = this.allTutors.find(function(t) {
+            return t.id == tutorId;
+        });
+        
+        if (tutor && typeof Order !== 'undefined') {
+            Order.openCreateModal(tutor, 'tutor');
+        }
     },
 
     // Обновление отображения курсов

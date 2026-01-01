@@ -1,23 +1,4 @@
-
-/* Область уведомлений */
-.notification-area {
-    position: fixed;
-    top: 0;
-    right: 0;
-    padding: 1rem;
-    z-index: 1050;
-}
-
-/* Футер */
-.footer-custom {
-    background-color: var(--deep-blue);
-    color: white;
-    padding: 2rem 0;
-    margin-top: 3rem;
-}
-
-css
-/* Основные стили проекта */
+/* Основные стили проекта EasyLang */
 
 /* Область уведомлений */
 .notification-area {
@@ -42,6 +23,15 @@ css
     border-radius: 10px;
     transition: all 0.3s ease;
     background-color: white;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.card-custom .card-body {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .card-custom:hover {
@@ -50,35 +40,70 @@ css
     border-color: var(--ocean-blue);
 }
 
-/* Цвета для текста */
-.text-primary-dark {
-    color: var(--deep-blue) !important;
+.card-custom .card-footer {
+    background-color: transparent;
+    border-top: 1px solid var(--sky-blue);
+    padding: 1rem;
+    margin-top: auto;
+    opacity: 1;
+    visibility: visible;
 }
 
-.text-ocean-blue {
-    color: var(--ocean-blue) !important;
+/* КНОПКИ В КАРТОЧКАХ - ФИКС */
+.card-custom .card-footer .btn {
+    margin-top: 0.5rem;
+    width: 100%;
+    opacity: 1;
+    visibility: visible;
+    display: block;
 }
 
-.text-accent-teal {
-    color: var(--seafoam) !important;
+.card-custom:hover .card-footer .btn {
+    transform: none;
+    opacity: 1;
 }
 
-/* Кнопки */
+/* Кнопка подать заявку - ОСОБЫЙ ФИКС */
 .btn-accent {
-    background-color: var(--seafoam);
-    border-color: var(--seafoam);
+    background-color: var(--accent-teal);
+    border-color: var(--accent-teal);
     color: white;
+    opacity: 1;
+    visibility: visible;
 }
 
 .btn-accent:hover {
     background-color: #16a085;
     border-color: #16a085;
     color: white;
+    opacity: 1;
+}
+
+/* Убираем прозрачность при наведении */
+.card-custom .btn-accent,
+.card-custom:hover .btn-accent,
+.card-custom .btn-outline-primary,
+.card-custom:hover .btn-outline-primary {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Цвета для текста */
+.text-primary-dark {
+    color: var(--deep-blue);
+}
+
+.text-ocean-blue {
+    color: var(--ocean-blue);
+}
+
+.text-accent-teal {
+    color: var(--seafoam);
 }
 
 /* Фон */
 .bg-primary-light {
-    background-color: var(--foam-white) !important;
+    background-color: var(--foam-white);
 }
 
 /* Стили для формы поиска */
@@ -101,7 +126,7 @@ css
 
 /* Стиль для счётчика курсов */
 #courses-count.empty {
-    background-color: var(--danger) !important;
+    background-color: var(--danger);
 }
 
 /* Стили для пагинации */
@@ -139,6 +164,20 @@ css
     background-color: rgba(52, 152, 219, 0.2);
 }
 
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table td, .table th {
+    vertical-align: middle;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
 /* Форма поиска репетиторов */
 #tutors-search .card {
     border-color: var(--accent-teal);
@@ -148,4 +187,137 @@ css
     background-color: rgba(26, 188, 156, 0.1);
     border-color: var(--accent-teal);
     color: var(--accent-teal);
+}
+
+/* Стили для модальных окон */
+.modal-lg {
+    max-width: 800px;
+}
+
+.modal-footer .btn {
+    min-width: 120px;
+}
+
+#priceCalculation {
+    background-color: rgba(52, 152, 219, 0.05);
+    padding: 1rem;
+    border-radius: 5px;
+    border-left: 4px solid var(--accent-teal);
+}
+
+.form-check-label {
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Стили кнопок в модальных окнах - обе видны */
+.modal-footer {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.modal-footer .btn {
+    flex: 1;
+    margin: 0 5px;
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Кнопки в таблицах */
+.table .btn-group {
+    white-space: nowrap;
+}
+
+#orders-body .btn-group {
+    display: flex;
+    flex-wrap: nowrap;
+}
+
+/* Улучшение видимости всех кнопок */
+.btn {
+    opacity: 1;
+    transition: all 0.2s;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .modal-lg {
+        max-width: 95%;
+        margin: 0.5rem;
+    }
+    
+    .card-custom {
+        margin-bottom: 1rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+    
+    .modal-footer {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
+        margin: 5px 0;
+    }
+}
+
+/* ОЧЕНЬ ВАЖНО: переопределяем все возможные скрывающие стили */
+.card-footer,
+.card-footer *,
+.modal-footer,
+.modal-footer *,
+.btn-accent,
+.btn-outline-primary {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Убираем все transition которые могут скрывать элементы */
+.card-custom,
+.card-custom *,
+.btn,
+.btn * {
+    transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s !important;
+}
+
+/* Фикс для Bootstrap: убираем возможные скрытые состояния */
+.btn:not(:disabled):not(.disabled) {
+    opacity: 1;
+}
+
+/* Гарантируем что текст на кнопках виден */
+.btn-accent,
+.btn-outline-primary,
+.btn-success,
+.btn-danger,
+.btn-warning,
+.btn-info {
+    color: inherit !important;
+}
+
+/* Дополнительный фикс для кнопки подать заявку */
+.card-custom .btn-accent {
+    background-color: #1abc9c;
+    border-color: #1abc9c;
+    color: white;
+    opacity: 1;
+    visibility: visible;
+    display: block;
+    position: relative;
+    z-index: 1;
+}
+
+.card-custom .btn-accent:hover {
+    background-color: #16a085;
+    border-color: #16a085;
 }

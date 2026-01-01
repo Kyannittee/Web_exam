@@ -221,21 +221,39 @@ const Cabinet = {
     
     // Методы для кнопок (заглушки)
     showOrderDetails: function(orderId) {
-        alert('Просмотр заявки #' + orderId + 
-              '\n(будет модальное окно)');
+        Utils.showNotification(
+            'Детали заявки #' + orderId, 
+            'info'
+        );
     },
     
     editOrder: function(orderId) {
-        alert('Редактирование заявки #' + orderId + 
-              '\n(будет модальное окно)');
+        if (typeof Order !== 'undefined') {
+            // Будет работать когда добавим метод
+            Utils.showNotification(
+                'Редактирование заявки #' + orderId, 
+                'info'
+            );
+        }
     },
     
     confirmDelete: function(orderId) {
-        const message = 'Вы уверены, что хотите удалить заявку #' + 
-                        orderId + '?';
-        if (confirm(message)) {
-            alert('Удаление заявки #' + orderId + 
-                  '\n(будет DELETE запрос к API)');
+        if (typeof Order !== 'undefined') {
+            Order.deleteOrderWithConfirmation(orderId);
+        } else {
+            var confirmMsg = 'Вы уверены, что хотите удалить ' +
+                            'заявку #' + orderId + '?';
+            
+            if (confirm(confirmMsg)) {
+                Api.deleteOrder(orderId)
+                    .then(() => this.loadOrders())
+                    .catch(error => {
+                        Utils.showNotification(
+                            'Ошибка удаления: ' + error.message, 
+                            'error'
+                        );
+                    });
+            }
         }
     },
     

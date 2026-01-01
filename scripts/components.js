@@ -118,6 +118,192 @@ const Components = {
         if (footerElement) {
             footerElement.innerHTML = this.footer();
         }
+    },
+
+    modalOrderForm: function(orderData, isEdit) {
+    // Проверяем на null/undefined безопасно
+        const data = orderData || {};
+        const course = data.course || {};
+        const tutor = data.tutor || {};
+        
+        const title = isEdit ? 'Редактирование заявки' : 'Оформление заявки';
+        const buttonText = isEdit ? 'Сохранить изменения' : 'Отправить заявку';
+        
+        // Безопасно получаем значения
+        const itemId = data.id || '';
+        const courseId = course.id || '';
+        const tutorId = tutor.id || '';
+        const courseName = course.name || tutor.name || '';
+        const teacherName = course.teacher || tutor.name || '';
+        const persons = data.persons || 1;
+        
+        // Проверяем чекбоксы безопасно
+        const supplementaryChecked = data.supplementary ? 'checked' : '';
+        const personalizedChecked = data.personalized ? 'checked' : '';
+        const excursionsChecked = data.excursions ? 'checked' : '';
+        const interactiveChecked = data.interactive ? 'checked' : '';
+        
+        // Длительность курса
+        const totalLength = course.total_length || 1;
+        
+        return `
+        <div class="modal fade" id="orderModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${title}</h5>
+                        <button type="button" class="btn-close" 
+                        data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="orderForm">
+                            <input type="hidden" id="orderId" value="${itemId}">
+                            <input type="hidden" 
+                            id="courseId" value="${courseId}">
+                            <input type="hidden" 
+                            id="tutorId" value="${tutorId}">
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">
+                                    Название курса / Репетитор</label>
+                                    <input type="text" 
+                                    class="form-control" readonly 
+                                        value="${courseName}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">
+                                    Преподаватель / Репетитор</label>
+                                    <input type="text" 
+                                    class="form-control" readonly 
+                                        value="${teacherName}">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">
+                                    Дата начала *</label>
+                                    <select class="form-select" 
+                                    id="startDate" required>
+                                        <option value="">Выберите дату</option>
+                                        <!-- Будет заполнено через JS -->
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">
+                                    Время занятия *</label>
+                                    <select class="form-select" id="startTime" 
+                                    required disabled>
+                                        <option value="">
+                                        Сначала выберите дату</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">
+                                    Продолжительность</label>
+                                    <input type="text" 
+                                    class="form-control" readonly 
+                                        value="${totalLength} недель">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">
+                                    Студентов в группе *</label>
+                                    <input type="number" 
+                                    class="form-control" id="persons" 
+                                        min="1" max="20" value="
+                                        ${persons}" required>
+                                    <small class="text-muted">
+                                    От 1 до 20 человек</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">
+                                    Дата окончания</label>
+                                    <input type="text" class="form-control" 
+                                    id="endDate" readonly>
+                                </div>
+                            </div>
+                            
+                            <!-- Дополнительные опции -->
+                            <div class="mb-4">
+                                <label class="form-label">
+                                Дополнительные опции:</label>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" 
+                                            type="checkbox" 
+                                                id="supplementary" 
+                                                ${supplementaryChecked}>
+                                            <label class="form-check-label" 
+                                            for="supplementary">
+                                                Дополнительные учебные 
+                                                материалы (+2000₽)
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" 
+                                            type="checkbox" 
+                                                id="personalized" 
+                                                ${personalizedChecked}>
+                                            <label class="form-check-label" 
+                                            for="personalized">
+                                                Индивидуальные занятия 
+                                                (+1500₽/неделю)
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" 
+                                            type="checkbox" 
+                                                id="excursions" 
+                                                ${excursionsChecked}>
+                                            <label class="form-check-label" 
+                                            for="excursions">
+                                                Культурные экскурсии (+25%)
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" 
+                                            type="checkbox" 
+                                                id="interactive" 
+                                                ${interactiveChecked}>
+                                            <label class="form-check-label" 
+                                            for="interactive">
+                                                Интерактивная платформа (+50%)
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Расчет стоимости -->
+                            <div class="alert alert-info">
+                                <h6 class="mb-2">Расчет стоимости:</h6>
+                                <div id="priceCalculation">
+                                    <!-- Будет рассчитано через JS -->
+                                </div>
+                                <h4 class="mt-3 mb-0">
+                                    Итого: <span id="totalPrice" 
+                                    class="text-primary">0 ₽</span>
+                                </h4>
+                            </div>
+                            
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" 
+                                data-bs-dismiss="modal">Отмена</button>
+                                <button type="submit" class=
+                                "btn btn-accent">${buttonText}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>`;
     }
 };
 
