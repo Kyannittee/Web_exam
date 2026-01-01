@@ -103,3 +103,49 @@ css
 #courses-count.empty {
     background-color: var(--danger) !important;
 }
+
+/* Стили для пагинации */
+#courses-pagination {
+    margin-top: 2rem;
+}
+
+#courses-pagination .page-item.active .page-link {
+    background-color: var(--accent-teal);
+    border-color: var(--accent-teal);
+    color: white;
+}
+
+#courses-pagination .page-link {
+    color: var(--deep-blue);
+    border-color: var(--sky-blue);
+}
+
+#courses-pagination .page-link:hover {
+    background-color: var(--foam-white);
+    border-color: var(--ocean-blue);
+}
+
+/* Стили для таблицы репетиторов */
+.table-hover tbody tr {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+.table-hover tbody tr.table-primary {
+    background-color: rgba(52, 152, 219, 0.2);
+}
+
+/* Форма поиска репетиторов */
+#tutors-search .card {
+    border-color: var(--accent-teal);
+}
+
+#tutors-search .input-group-text {
+    background-color: rgba(26, 188, 156, 0.1);
+    border-color: var(--accent-teal);
+    color: var(--accent-teal);
+}

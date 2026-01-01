@@ -1,43 +1,54 @@
 // main.js - логика главной страницы
 
 const Main = {
+    allCourses: [],
+    currentCoursePage: 1,      
+    coursesPerPage: 5,         
+    filteredCourses: [],
+    allTutors: [], // Все репетиторы из API
+    filteredTutors: [], // Отфильтрованные репетиторы
+    selectedTutorId: null, // ID выбранного репетитора       
+    
     // Инициализация главной страницы
     init: function() {
         this.setupEventListeners();
         this.loadContent();
+        
     },
     
     // Загрузка контента
     loadContent: async function() {
         const content = document.getElementById('main-content');
         if (content) {
-            // Показываем заглушку
             content.innerHTML = this.renderLoading();
             
             try {
-                // Загружаем данные с API
                 const courses = await this.loadCourses();
                 const tutors = await this.loadTutors();
                 
-                // Сохраняем курсы в свойство
                 this.allCourses = courses;
+                this.allTutors = tutors; 
+                this.filteredCourses = [];
+                this.filteredTutors = []; 
                 
-                // Рендерим с реальными данными
                 content.innerHTML = this.renderContent(tutors);
                 
-                // Инициализируем поиск после рендера
+                this.updateCoursesDisplay();
                 this.setupSearchListeners();
                 
             } catch (error) {
-                // Если ошибка, показываем с демо-данными
                 console.log('Используем демо-данные');
                 this.allCourses = this.getMockCourses();
+                this.allTutors = this.getMockTutors();
+                this.filteredCourses = [];
+                this.filteredTutors = [];
+                
                 content.innerHTML = this.renderContent(this.getMockTutors());
+                this.updateCoursesDisplay();
                 this.setupSearchListeners();
             }
         }
     },
-
     // Загрузка курсов
     loadCourses: async function() {
         try {
@@ -46,7 +57,7 @@ const Main = {
             return courses;
         } catch (error) {
             console.error('Ошибка загрузки курсов:', error);
-            throw error; // Важно! Пробрасываем ошибку дальше
+            throw error; // Пробрасываем ошибку дальше
         }
     },
     
@@ -112,21 +123,23 @@ const Main = {
     
     // Рендер реальных курсов
     renderCourses: function(courses) {
+        console.log('renderCourses вызван с', courses.length, 'курсами');
+        
         if (!courses || courses.length === 0) {
             return `
-            <div class="alert alert-warning">
-                <i class="bi bi-exclamation-triangle me-2"></i>
-                Курсы временно недоступны
-            </div>
-        `;
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Курсы временно недоступны
+                </div>
+            `;
         }
         
         return `
         <div class="row g-4">
-            ${courses.slice(0, 6).map(course => {
+            ${courses.map(course => {  
         // Выносим логику описания
         let description = 'Описание отсутствует';
-                
+                    
         if (course.description) {
             if (course.description.length > 100) {
                 description = course.description
@@ -189,7 +202,7 @@ const Main = {
             return `
             <div class="alert alert-warning">
                 <i class="bi bi-exclamation-triangle me-2"></i>
-                Репетиторы временно недоступны
+                Репетиторы не найдены по выбранным критериям
             </div>
         `;
         }
@@ -209,14 +222,19 @@ const Main = {
                 </thead>
                 <tbody>
                     ${tutors.map(tutor => {
-        // Выносим languages в переменную
-        const languages = (tutor.languages_offered || [])
-            .join(', ');
-                        
+        const isSelected = this.selectedTutorId === tutor.id;
+        const rowClass = isSelected ? 'table-primary' : '';
+        const languages = (tutor.languages_offered || []).join(', ');
+        
         return `
-                        <tr>
+                        <tr class="${rowClass}" 
+                            data-tutor-id="${tutor.id}"
+                            onclick="Main.selectTutor(${tutor.id})">
                             <td>
                                 <strong>${tutor.name}</strong>
+                                ${isSelected ? 
+        '<span class="badge bg-success ms-2">Выбран</span>' : 
+        ''}
                             </td>
                             <td>${tutor.work_experience} лет</td>
                             <td>${languages}</td>
@@ -230,8 +248,8 @@ const Main = {
                             </td>
                             <td>
                                 <button class="btn btn-sm btn-outline-primary"
-                                        onclick="Main.showTutorModal(` +
-                                        `${tutor.id})">
+                                        onclick="Main.showTutorModal(${tutor
+        .id})">
                                     <i class="bi bi-eye"></i>
                                 </button>
                             </td>
@@ -244,16 +262,105 @@ const Main = {
     `;
     },
 
+    // Рендер формы поиска репетиторов
+    renderTutorSearchForm: function() {
+        // Языки из всех репетиторов (уникальные)
+        const allLanguages = [...new Set(
+            this.allTutors.flatMap(tutor => tutor.languages_offered || [])
+        )].sort();
+        
+        return `
+        <div class="card mb-4 border-info">
+            <div class="card-body">
+                <h5 class="card-title text-primary-dark mb-3">
+                    <i class="bi bi-search me-2"></i>Поиск репетиторов
+                </h5>
+                <div class="row g-3">
+                    <!-- Язык -->
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-translate"></i>
+                            </span>
+                            <select class="form-select" 
+                                    id="tutor-language-select">
+                                <option value="">Все языки</option>
+                                ${allLanguages.map(lang => `
+                                    <option value="${lang}">${lang}</option>
+                                `).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Уровень -->
+                    <div class="col-md-3">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-bar-chart"></i>
+                            </span>
+                            <select class="form-select" 
+                                    id="tutor-level-select">
+                                <option value="">Все уровни</option>
+                                <option value="Beginner">Начальный</option>
+                                <option value="Intermediate">Средний</option>
+                                <option value="Advanced">Продвинутый</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Опыт (лет) -->
+                    <div class="col-md-3">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-clock-history"></i>
+                            </span>
+                            <select class="form-select" 
+                                    id="tutor-experience-select">
+                                <option value="">Любой опыт</option>
+                                <option value="1">1+ лет</option>
+                                <option value="3">3+ лет</option>
+                                <option value="5">5+ лет</option>
+                                <option value="10">10+ лет</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Сброс -->
+                    <div class="col-md-2">
+                        <button type="button" 
+                                class="btn btn-outline-secondary w-100"
+                                id="reset-tutor-search-btn">
+                            <i class="bi bi-x-circle"></i> Сбросить
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-2 text-muted small">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Репетиторы фильтруются в реальном времени
+                </div>
+            </div>
+        </div>
+    `;
+    },
+
     getPaginatedCourses: function() {
-        // Пока возвращаем все курсы, пагинацию сделаем позже
-        if (!this.allCourses || this.allCourses.length === 0) {
+        // Если нет отфильтрованных курсов, используем все
+        const courses = this.filteredCourses.length > 0 ? 
+            this.filteredCourses : this.allCourses;
+        
+        if (!courses || courses.length === 0) {
             return [];
         }
-        return this.allCourses;
+        
+        // Рассчитываем индексы для текущей страницы
+        const startIndex = (this.currentCoursePage - 1) * this.coursesPerPage;
+        const endIndex = startIndex + this.coursesPerPage;
+        return courses.slice(startIndex, endIndex);
     },
 
     // Рендер контента главной страницы
     renderContent: function(tutors = []) {
+        this.allTutors = tutors; // Сохраняем репетиторов
         // Проверяем что allCourses инициализирован
         const coursesCount = this.allCourses ? this.allCourses.length : 0;
         return `
@@ -400,7 +507,7 @@ const Main = {
         </div>
     </div>
 </section>
-<!-- ПОИСК КУРСОВ-->
+<!-- поиск курсов-->
         <section id="courses-search" class="mb-4">
             ${this.renderSearchForm()}
         </section>
@@ -419,9 +526,19 @@ const Main = {
             <!-- Пагинация добавится позже -->
         </section>
 
+<!-- Поиск репетиторов -->
+        <section id="tutors-search" class="mb-4">
+            ${this.renderTutorSearchForm()}
+        </section>
+
 <!-- Блок репетиторов -->
 <section id="tutors" class="mb-5">
-            <h2 class="text-primary-dark mb-4">Наши репетиторы</h2>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-primary-dark">Наши репетиторы</h2>
+                <span class="badge bg-info" id="tutors-count">
+                    ${tutors.length} репетиторов
+                </span>
+            </div>
             ${this.renderTutors(tutors)}
         </section>`;
     },
@@ -488,45 +605,261 @@ const Main = {
         const levelSelect = document.getElementById('course-level-select');
         
         if (!searchInput || !levelSelect || !this.allCourses) {
-            return this.allCourses || [];
+            this.filteredCourses = this.allCourses || [];
+            return this.filteredCourses;
         }
         
         const searchTerm = searchInput.value.toLowerCase().trim();
         const selectedLevel = levelSelect.value;
         
-        return this.allCourses.filter(course => {
-            // Фильтр по названию
+        this.filteredCourses = this.allCourses.filter(course => {
             const matchesSearch = searchTerm === '' || 
                 course.name.toLowerCase().includes(searchTerm) ||
                 (course.description && 
                 course.description.toLowerCase().includes(searchTerm));
             
-            // Фильтр по уровню
             const matchesLevel = selectedLevel === '' || 
                 course.level === selectedLevel;
             
             return matchesSearch && matchesLevel;
         });
+        
+        return this.filteredCourses;
+    },
+
+    // Фильтрация репетиторов
+    filterTutors: function() {
+        const languageSelect = document.getElementById('tutor-language-select');
+        const levelSelect = document.getElementById('tutor-level-select');
+        const experienceSelect = document
+            .getElementById('tutor-experience-select');
+        
+        if (!languageSelect || !levelSelect || !experienceSelect 
+            || !this.allTutors) {
+            this.filteredTutors = this.allTutors || [];
+            return this.filteredTutors;
+        }
+        
+        const selectedLanguage = languageSelect.value;
+        const selectedLevel = levelSelect.value;
+        const selectedExperience = experienceSelect.value;
+        
+        this.filteredTutors = this.allTutors.filter(tutor => {
+            // Фильтр по языку
+            const matchesLanguage = selectedLanguage === '' || 
+                (tutor.languages_offered && 
+                tutor.languages_offered.includes(selectedLanguage));
+            
+            // Фильтр по уровню
+            const matchesLevel = selectedLevel === '' || 
+                tutor.language_level === selectedLevel;
+            
+            // Фильтр по опыту
+            const matchesExperience = selectedExperience === '' || 
+                tutor.work_experience >= parseInt(selectedExperience);
+            
+            return matchesLanguage && matchesLevel && matchesExperience;
+        });
+        
+        return this.filteredTutors;
     },
 
     // Обновление отображения курсов
     updateCoursesDisplay: function() {
+        
+        // Получаем отфильтрованные курсы
         const filteredCourses = this.filterCourses();
+        
+        // Получаем курсы для текущей страницы
+        const paginatedCourses = this.getPaginatedCourses();
+        
         const coursesContainer = document.getElementById('courses-container');
         const coursesCount = document.getElementById('courses-count');
-    
+        
+        // Обновляем контейнер с курсами
         if (coursesContainer) {
-            coursesContainer.innerHTML = this.renderCourses(filteredCourses);
+            coursesContainer.innerHTML = this.renderCourses(paginatedCourses);
         }
         
+        // Обновляем счётчик
         if (coursesCount) {
             coursesCount.textContent = `${filteredCourses.length} курсов`;
-            // Меняем цвет если ничего не найдено
-            if (filteredCourses.length === 0) {
-                coursesCount.className = 'badge bg-danger';
-            } else {
-                coursesCount.className = 'badge bg-accent-teal';
+            coursesCount.className = filteredCourses.length === 0 ? 
+                'badge bg-danger' : 'badge bg-accent-teal';
+        }
+        
+        
+        let paginationContainer = document.getElementById('courses-pagination');
+        
+        if (!paginationContainer) {
+            // Создаём контейнер если его нет
+            paginationContainer = document.createElement('div');
+            paginationContainer.id = 'courses-pagination';
+            paginationContainer.className = 'mt-4';
+            
+            const coursesSection = document.getElementById('courses');
+            if (coursesSection) {
+                coursesSection.appendChild(paginationContainer);
             }
+        }
+        
+        
+        // Рендерим пагинацию
+        const paginationHTML = this.renderPagination();
+        if (paginationContainer && paginationHTML) {
+            paginationContainer.innerHTML = paginationHTML;
+        }
+        
+        // Назначаем обработчики для пагинации
+        this.setupPaginationListeners();
+    },
+
+    // Обновление отображения репетиторов
+    updateTutorsDisplay: function() {
+        const filteredTutors = this.filterTutors();
+        const tutorsContainer = document
+            .querySelector('#tutors .table-responsive');
+        const tutorsCount = document.getElementById('tutors-count');
+        
+        // Обновляем контейнер с репетиторами
+        if (tutorsContainer && tutorsContainer.parentNode) {
+            // Заменяем всю таблицу
+            tutorsContainer.outerHTML = this.renderTutors(filteredTutors);
+        }
+        
+        // Обновляем счётчик
+        if (tutorsCount) {
+            tutorsCount.textContent = `${filteredTutors.length} репетиторов`;
+            tutorsCount.className = filteredTutors.length === 0 ? 
+                'badge bg-danger' : 'badge bg-info';
+        }
+    },
+
+    // Выбор репетитора
+    selectTutor: function(tutorId) {
+        if (this.selectedTutorId === tutorId) {
+            this.selectedTutorId = null; // Снимаем выделение
+        } else {
+            this.selectedTutorId = tutorId; // Выбираем нового
+        }
+        
+        // Обновляем отображение
+        this.updateTutorsDisplay();
+        
+        console.log('Выбран репетитор #' + tutorId);
+        
+        // Можно добавить уведомление
+        if (this.selectedTutorId) {
+            const tutor = this.allTutors.find(t => t.id === tutorId);
+            if (tutor) {
+                Utils.showNotification(
+                    `Выбран репетитор: ${tutor.name}`, 
+                    'info'
+                );
+            }
+        }
+    },
+
+    // Обработчики для пагинации
+    setupPaginationListeners: function() {
+        const paginationLinks = document.querySelectorAll(
+            '#courses-pagination .page-link'
+        );
+        
+        console.log('Найдено ссылок пагинации:', paginationLinks.length);
+        
+        paginationLinks.forEach(link => {
+            // Удаляем старые обработчики чтобы не дублировать
+            link.replaceWith(link.cloneNode(true));
+        });
+        
+        // Получаем ссылки заново
+        const freshLinks = document.querySelectorAll(
+            '#courses-pagination .page-link');
+        
+        freshLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('Клик по пагинации:', e.target.dataset.page);
+                
+                const page = e.target.closest('a').dataset.page;
+                const courses = this.filteredCourses.length > 0 ? 
+                    this.filteredCourses : this.allCourses;
+                const totalPages = Math.ceil(
+                    courses.length / this.coursesPerPage
+                );
+                
+                console.log('Страница:', page, 'Всего страниц:', totalPages);
+                
+                if (page === 'prev' && this.currentCoursePage > 1) {
+                    this.currentCoursePage--;
+                    console.log('Переход на страницу:', 
+                        this.currentCoursePage);
+                    this.updateCoursesDisplay();
+                    this.scrollToCourses();
+                } else if (page === 'next' && this.currentCoursePage 
+                    < totalPages) {
+                    this.currentCoursePage++;
+                    console.log('Переход на страницу:', this.
+                        currentCoursePage);
+                    this.updateCoursesDisplay();
+                    this.scrollToCourses();
+                } else if (!isNaN(page)) {
+                    const newPage = parseInt(page);
+                    if (newPage >= 1 && newPage <= totalPages) {
+                        this.currentCoursePage = newPage;
+                        console.log('Переход на страницу:', this.
+                            currentCoursePage);
+                        this.updateCoursesDisplay();
+                        this.scrollToCourses();
+                    }
+                }
+            }); 
+        });
+    },
+
+    // Настройка обработчиков поиска репетиторов
+    setupTutorSearchListeners: function() {
+        const languageSelect = document.getElementById('tutor-language-select');
+        const levelSelect = document.getElementById('tutor-level-select');
+        const experienceSelect = document
+            .getElementById('tutor-experience-select');
+        const resetBtn = document.getElementById('reset-tutor-search-btn');
+        
+        if (languageSelect) {
+            languageSelect.addEventListener('change', () => {
+                this.updateTutorsDisplay();
+            });
+            
+            levelSelect.addEventListener('change', () => {
+                this.updateTutorsDisplay();
+            });
+            
+            experienceSelect.addEventListener('change', () => {
+                this.updateTutorsDisplay();
+            });
+            
+            if (resetBtn) {
+                resetBtn.addEventListener('click', () => {
+                    languageSelect.value = '';
+                    levelSelect.value = '';
+                    experienceSelect.value = '';
+                    this.selectedTutorId = null; // Сбрасываем выбор
+                    this.updateTutorsDisplay();
+                });
+            }
+        }
+    },
+
+    // Добавляем метод для прокрутки
+    scrollToCourses: function() {
+        const coursesElement = document.getElementById('courses');
+        if (coursesElement) {
+            const scrollTop = coursesElement.offsetTop - 100;
+            window.scrollTo({ 
+                top: scrollTop, 
+                behavior: 'smooth' 
+            });
         }
     },
 
@@ -544,11 +877,65 @@ const Main = {
     // Настройка обработчиков событий
     setupEventListeners: function() {
         console.log('Main page initialized');
-    
-        // Ждем немного чтобы DOM обновился
+        
         setTimeout(() => {
-            this.setupSearchListeners();
+            this.setupSearchListeners();       
+            this.setupTutorSearchListeners();  
         }, 100);
+    },
+
+    // Рендер пагинации
+    renderPagination: function() {
+        const courses = this.filteredCourses.length > 0 ? 
+            this.filteredCourses : this.allCourses;
+        
+        if (!courses || courses.length <= this.coursesPerPage) {
+            return ''; // Не показываем пагинацию если курсов мало
+        }
+        
+        const totalPages = Math.ceil(courses.length / this.coursesPerPage);
+        
+        let html = `
+            <nav aria-label="Навигация по страницам курсов">
+                <ul class="pagination justify-content-center">
+        `;
+        
+        // Кнопка "Назад"
+        html += `
+            <li class="page-item ${this.currentCoursePage === 1 ? 
+        'disabled' : ''}">
+                <a class="page-link" href="#" data-page="prev">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+        `;
+        
+        // Номера страниц
+        for (let i = 1; i <= totalPages; i++) {
+            html += `
+                <li class="page-item ${this.currentCoursePage === i ? 
+        'active' : ''}">
+                    <a class="page-link" href="#" data-page="${i}">${i}</a>
+                </li>
+            `;
+        }
+        
+        // Кнопка "Вперед"
+        html += `
+            <li class="page-item ${this.currentCoursePage === totalPages ? 
+        'disabled' : ''}">
+                <a class="page-link" href="#" data-page="next">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        `;
+        
+        html += `
+                </ul>
+            </nav>
+        `;
+        
+        return html;
     },
 
     // Настройка обработчиков поиска
@@ -560,12 +947,14 @@ const Main = {
         if (searchInput) {
             // Поиск при вводе текста
             searchInput.addEventListener('input', () => {
+                this.currentCoursePage = 1; 
                 this.updateCoursesDisplay();
             });
             
             // Поиск при изменении уровня
             if (levelSelect) {
                 levelSelect.addEventListener('change', () => {
+                    this.currentCoursePage = 1;  
                     this.updateCoursesDisplay();
                 });
             }
@@ -575,6 +964,7 @@ const Main = {
                 resetBtn.addEventListener('click', () => {
                     searchInput.value = '';
                     if (levelSelect) levelSelect.value = '';
+                    this.currentCoursePage = 1;  
                     this.updateCoursesDisplay();
                 });
             }
