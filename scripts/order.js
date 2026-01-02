@@ -9,6 +9,9 @@ const Order = {
     },
     
     openCreateModal: function(item, type) {
+        console.log('=== открываем модальное окно ==='); 
+        console.log('Тип:', type);
+        console.log('Данные:', item);
         this.selectedItem = item;
         this.itemType = type || 'course';
         
@@ -20,10 +23,24 @@ const Order = {
         }
         
         var modalData = {
-            course: type === 'course' ? item : null,
-            tutor: type === 'tutor' ? item : null
+            id: item.id ? parseInt(item.id.toString().trim()) : 0,
+            course: type === 'course' ? {
+                id: item.id,
+                name: item.name || '',
+                teacher: item.teacher || '',
+                total_length: item.total_length || 1,
+                week_length: item.week_length || 1,
+                course_fee_per_hour: item.course_fee_per_hour || 0,
+                start_dates: item.start_dates || [] 
+            } : null,
+            tutor: type === 'tutor' ? {
+                id: item.id,
+                name: item.name || '',
+                price_per_hour: item.price_per_hour || 0
+            } : null
         };
         
+        console.log('Modal data подготовлено:', modalData); 
         var modalHTML = Components.modalOrderForm(modalData, false);
         modalsContainer.innerHTML += modalHTML;
         
@@ -44,12 +61,45 @@ const Order = {
     },
     
     populateStartDates: function() {
+        // Для курсов: даты из API (start_dates)
+        // Для репетиторов: API не предоставляет расписание, 
+        // генерируем ближайшие 30 дней для примера
+        console.log('=== заполняем даты ===');
+        console.log('Тип элемента:', this.itemType);
+        console.log('Выбранный элемент:', this.selectedItem);
+        
+        // Безопасная проверка
+        if (this.itemType === 'course') {
+            console.log('start_dates:', 
+                this.selectedItem ? this.selectedItem.
+                    start_dates : 'undefined');
+            
+            // Проверяем длину безопасно
+            var startDatesLength = 0;
+            if (this.selectedItem && 
+                this.selectedItem.start_dates && 
+                Array.isArray(this.selectedItem.start_dates)) {
+                startDatesLength = this.selectedItem.start_dates.length;
+            }
+            console.log('Длина массива start_dates:', startDatesLength);
+        } else {
+            console.log('Это репетитор, у него нет start_dates');
+        }
+        
         var dateSelect = document.getElementById('startDate');
-        if (!dateSelect) return;
+        if (!dateSelect) {
+            console.error('dateSelect не найден!');
+            return;
+        }
         
         dateSelect.innerHTML = '<option value="">Выберите дату</option>';
         
-        if (this.itemType === 'course' && this.selectedItem.start_dates) {
+        // для курсов используем start_dates
+        if (this.itemType === 'course' && 
+            this.selectedItem && 
+            this.selectedItem.start_dates && 
+            Array.isArray(this.selectedItem.start_dates)) {
+            
             var uniqueDates = [];
             var datesMap = {};
             
@@ -73,6 +123,7 @@ const Order = {
                     formattedDate + '</option>';
             }
         } else {
+            // Для репетиторов или если нет start_dates - генерируем даты
             var today = new Date();
             for (var k = 1; k <= 30; k++) {
                 var date = new Date(today);
@@ -117,7 +168,8 @@ const Order = {
             'supplementary', 
             'personalized', 
             'excursions', 
-            'interactive'
+            'interactive',
+            'assessment'
         ];
         
         for (var i = 0; i < checkboxes.length; i++) {
@@ -221,6 +273,7 @@ const Order = {
     calculatePrice: function() {
         if (!this.selectedItem) return 0;
         
+        // Получаем данные из формы
         var personsInput = document.getElementById('persons');
         var dateSelect = document.getElementById('startDate');
         var timeSelect = document.getElementById('startTime');
@@ -232,21 +285,22 @@ const Order = {
         if (persons < 1) persons = 1;
         if (persons > 20) persons = 20;
         
+        // 1. базовая стоимость
         var basePricePerHour = this.itemType === 'course' ? 
             (this.selectedItem.course_fee_per_hour || 0) : 
             (this.selectedItem.price_per_hour || 0);
         
+        // 2. продолжительность
         var totalLength = this.selectedItem.total_length || 1;
         var weekLength = this.selectedItem.week_length || 1;
         var durationHours = this.itemType === 'course' ? 
             totalLength * weekLength : 1;
         
+        // 3. временные наценки
         var dateStr = dateSelect.value;
         var timeStr = timeSelect.value;
         
-        var baseCost = basePricePerHour * durationHours;
         var weekendMultiplier = 1;
-        
         if (dateStr) {
             var date = new Date(dateStr);
             var dayOfWeek = date.getDay();
@@ -257,7 +311,6 @@ const Order = {
         
         var morningSurcharge = 0;
         var eveningSurcharge = 0;
-        
         if (timeStr) {
             var hour = parseInt(timeStr.split(':')[0]);
             if (hour >= 9 && hour < 12) {
@@ -268,54 +321,55 @@ const Order = {
             }
         }
         
-        var costPerPerson = (baseCost * weekendMultiplier) + 
-                           morningSurcharge + eveningSurcharge;
+        // 4. основная формула
+        var baseCost = basePricePerHour * durationHours;
+        var timeAdjustedCost = (baseCost * weekendMultiplier) + 
+                            morningSurcharge + eveningSurcharge;
         
+        // 5. процентные множители
+        var percentageMultiplier = 1.0;
+        
+        // Автоматические опции
+        var earlyRegistration = this.checkEarlyRegistration(dateStr);
+        var groupEnrollment = persons >= 5;
+        var intensiveCourse = this.itemType === 'course' && weekLength >= 5;
+        
+        if (earlyRegistration) percentageMultiplier -= 0.10;
+        if (groupEnrollment) percentageMultiplier -= 0.15;
+        if (intensiveCourse) percentageMultiplier += 0.20;
+        
+        // Пользовательские чекбоксы
         var supplementaryEl = document.getElementById('supplementary');
         var personalizedEl = document.getElementById('personalized');
         var excursionsEl = document.getElementById('excursions');
         var interactiveEl = document.getElementById('interactive');
+        var assessmentEl = document.getElementById('assessment');
         
         var supplementary = supplementaryEl && supplementaryEl.checked;
         var personalized = personalizedEl && personalizedEl.checked;
         var excursions = excursionsEl && excursionsEl.checked;
         var interactive = interactiveEl && interactiveEl.checked;
+        var assessment = assessmentEl && assessmentEl.checked;
         
-        var earlyRegistration = this.checkEarlyRegistration(dateStr);
-        var groupEnrollment = persons >= 5;
-        var intensiveCourse = this.itemType === 'course' && 
-                              weekLength >= 5;
+        if (excursions) percentageMultiplier += 0.25;
+        if (interactive) percentageMultiplier += 0.50;
         
-        if (supplementary) {
-            costPerPerson += 2000;
-        }
-        
+        // 6. фикс. доплаты
+        var fixedAdditions = 0;
+        if (supplementary) fixedAdditions += 2000;
         if (personalized && this.itemType === 'course') {
-            costPerPerson += 1500 * totalLength;
+            fixedAdditions += 1500 * totalLength;
         }
+        if (assessment) fixedAdditions += 300;
         
-        if (excursions) {
-            costPerPerson *= 1.25;
-        }
+        // 7. итог для одного
+        var costPerPerson = 
+        (timeAdjustedCost * percentageMultiplier) + fixedAdditions;
         
-        if (interactive) {
-            costPerPerson *= 1.5;
-        }
-        
-        if (intensiveCourse) {
-            costPerPerson *= 1.2;
-        }
-        
-        if (earlyRegistration) {
-            costPerPerson *= 0.9;
-        }
-        
-        if (groupEnrollment) {
-            costPerPerson *= 0.85;
-        }
-        
+        // 8. умножение на количество
         var totalCost = Math.round(costPerPerson * persons);
         
+        // Обновляем отображение
         this.updatePriceDisplay({
             basePricePerHour: basePricePerHour,
             durationHours: durationHours,
@@ -323,13 +377,13 @@ const Order = {
             weekendMultiplier: weekendMultiplier,
             morningSurcharge: morningSurcharge,
             eveningSurcharge: eveningSurcharge,
+            earlyRegistration: earlyRegistration,
+            groupEnrollment: groupEnrollment,
+            intensiveCourse: intensiveCourse,
             supplementary: supplementary,
             personalized: personalized,
             excursions: excursions,
             interactive: interactive,
-            earlyRegistration: earlyRegistration,
-            groupEnrollment: groupEnrollment,
-            intensiveCourse: intensiveCourse,
             totalCost: totalCost
         });
         
@@ -447,6 +501,7 @@ const Order = {
         var personalizedEl = document.getElementById('personalized');
         var excursionsEl = document.getElementById('excursions');
         var interactiveEl = document.getElementById('interactive');
+        var assessmentEl = document.getElementById('assessment');
         
         var formData = {
             date_start: startDateEl.value,
@@ -454,23 +509,22 @@ const Order = {
             persons: parseInt(personsEl.value) || 1,
             duration: this.itemType === 'course' ? 
                 ((this.selectedItem.total_length || 1) * 
-                 (this.selectedItem.week_length || 1)) : 1,
+                (this.selectedItem.week_length || 1)) : 1,
             price: this.calculatePrice(),
-            early_registration: this.checkEarlyRegistration(
-                startDateEl.value
-            ),
+            early_registration: this.checkEarlyRegistration(startDateEl.value),
             group_enrollment: parseInt(personsEl.value) >= 5,
             intensive_course: this.itemType === 'course' && 
-                           (this.selectedItem.week_length || 0) >= 5,
+                        (this.selectedItem.week_length || 0) >= 5,
             supplementary: supplementaryEl ? 
                 supplementaryEl.checked : false,
             personalized: personalizedEl ? 
                 personalizedEl.checked : false,
             excursions: excursionsEl ? 
                 excursionsEl.checked : false,
-            assessment: false,
             interactive: interactiveEl ? 
-                interactiveEl.checked : false
+                interactiveEl.checked : false,
+            assessment: assessmentEl ? 
+                assessmentEl.checked : false, 
         };
         
         if (this.itemType === 'course') {
@@ -575,6 +629,295 @@ const Order = {
         }
     },
     
+    openEditModal: async function(orderId, item, type) {
+        try {
+            // Закрываем и удаляем все предыдущие модальные окна
+            const existingModal = document.getElementById('orderModal');
+            if (existingModal) {
+                const modalInstance = bootstrap.Modal.
+                    getInstance(existingModal);
+                if (modalInstance) modalInstance.hide();
+                existingModal.remove();
+            }
+            
+            // Загружаем полные данные заявки если не переданы
+            if (!item || !item.orderData) {
+                const order = await Api.getOrder(orderId);
+                if (type === 'course' && order.course_id) {
+                    item = await Api.getCourse(order.course_id);
+                } else if (order.tutor_id) {
+                    item = await Api.getTutor(order.tutor_id);
+                }
+                item.orderData = order;
+            }
+            
+            this.selectedItem = item;
+            this.itemType = type;
+            
+            // Создаем безопасную копию данных без функций
+            const orderData = {
+                id: item.orderData.id,
+                date_start: item.orderData.date_start,
+                time_start: item.orderData.time_start,
+                persons: item.orderData.persons || 1,
+                price: item.orderData.price || 0,
+                supplementary: item.orderData.supplementary || false,
+                personalized: item.orderData.personalized || false,
+                excursions: item.orderData.excursions || false,
+                interactive: item.orderData.interactive || false,
+                early_registration: item.orderData.early_registration || false,
+                group_enrollment: item.orderData.group_enrollment || false,
+                intensive_course: item.orderData.intensive_course || false
+            };
+            
+            // Добавляем информацию о курсе/репетиторе
+            if (type === 'course') {
+                orderData.courseName = item.name || 'Курс';
+                orderData.tutorName = item.teacher || 'Преподаватель';
+                orderData.course_fee_per_hour = item.course_fee_per_hour || 0;
+                orderData.total_length = item.total_length || 1;
+                orderData.week_length = item.week_length || 1;
+            } else {
+                orderData.tutorName = item.name || 'Репетитор';
+                orderData.price_per_hour = item.price_per_hour || 0;
+            }
+            
+            // Создаем модальное окно
+            const modalsContainer = document.getElementById('modals-container');
+            if (!modalsContainer) {
+                const container = document.createElement('div');
+                container.id = 'modals-container';
+                document.body.appendChild(container);
+            }
+            
+            const modalHTML = Components.modalOrderForm(orderData, true);
+            document.getElementById('modals-container').innerHTML += modalHTML;
+            
+            // Показываем модальное окно
+            const modalElement = document.getElementById('orderModal');
+            if (modalElement) {
+                const modal = new bootstrap.Modal(modalElement);
+                
+                // Обработчик закрытия модального окна
+                modalElement.addEventListener('hidden.bs.modal', function() {
+                    if (modalElement.parentNode) {
+                        modalElement.parentNode.removeChild(modalElement);
+                    }
+                    self.selectedItem = null;
+                    self.itemType = null;
+                });
+                
+                modal.show();
+                
+                // Заполняем форму данными
+                this.initForm();
+                this.fillFormWithOrderData(orderData);
+                
+                
+                // Меняем обработчик submit на обновление
+                const form = document.getElementById('orderForm');
+                if (form) {
+                    // Удаляем все предыдущие обработчики
+                    const newForm = form.cloneNode(true);
+                    form.parentNode.replaceChild(newForm, form);
+                    
+                    // Добавляем новый обработчик
+                    newForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.updateOrder(orderId);
+                    });
+                    
+                    // Добавляем скрытое поле с ID заявки
+                    const orderIdInput = document.createElement('input');
+                    orderIdInput.type = 'hidden';
+                    orderIdInput.name = 'order_id';
+                    orderIdInput.value = orderId;
+                    orderIdInput.id = 'orderId';
+                    newForm.appendChild(orderIdInput);
+                }
+            }
+            
+        } catch (error) {
+            console.error('Ошибка открытия формы редактирования:', error);
+            Utils.showNotification('Не удалось открыть форму редактирования'
+                , 'error');
+        }
+    },
+
+    // Заполнение формы данными заявки
+    fillFormWithOrderData: function(order) {
+        const self = this;
+        
+        // Устанавливаем количество человек
+        const personsInput = document.getElementById('persons');
+        if (personsInput) personsInput.value = order.persons || 1;
+        
+        // Устанавливаем дату
+        const dateSelect = document.getElementById('startDate');
+        if (dateSelect && order.date_start) {
+            dateSelect.value = order.date_start;
+            
+            // Обновляем временные слоты
+            this.updateTimeSlots(order.date_start);
+            
+            // Устанавливаем время после загрузки слотов
+            setTimeout(() => {
+                const timeSelect = document.getElementById('startTime');
+                if (timeSelect && order.time_start) {
+                    const timeValue = order.time_start.substring(0, 5);
+                    timeSelect.value = timeValue;
+                    
+                    // Прокручиваем к выбранному времени
+                    for (let i = 0; i < timeSelect.options.length; i++) {
+                        if (timeSelect.options[i].value === timeValue) {
+                            timeSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }, 300); // Увеличиваем задержку для гарантированной загрузки
+        }
+        
+        // Устанавливаем чекбоксы
+        const checkboxes = ['supplementary', 'personalized',
+            'excursions', 'interactive', 'assessment'];
+        checkboxes.forEach(id => {
+            const checkbox = document.getElementById(id);
+            if (checkbox) {
+                checkbox.checked = order[id] || false;
+            }
+        });
+        
+        // Пересчитываем стоимость
+        setTimeout(() => {
+            self.calculatePrice();
+            
+            // Обновляем отображение итоговой стоимости
+            const totalPriceSpan = document.getElementById('totalPrice');
+            if (totalPriceSpan && order.price) {
+                totalPriceSpan.textContent = 
+                Cabinet.formatPrice(order.price) + ' ₽';
+            }
+        }, 400);
+    },
+
+    setupPriceCalculationListeners: function() {
+        var self = this;
+        
+        // Элементы формы
+        var dateSelect = document.getElementById('startDate');
+        var timeSelect = document.getElementById('startTime');
+        var personsInput = document.getElementById('persons');
+        
+        // Слушаем изменения даты
+        if (dateSelect) {
+            dateSelect.addEventListener('change', function() {
+                self.calculatePrice();
+            });
+        }
+        
+        // Слушаем изменения времени
+        if (timeSelect) {
+            timeSelect.addEventListener('change', function() {
+                self.calculatePrice();
+            });
+        }
+        
+        // Слушаем изменения количества человек
+        if (personsInput) {
+            personsInput.addEventListener('input', function() {
+                self.calculatePrice();
+            });
+        }
+        
+        // Все чекбоксы опций
+        var checkboxes = ['supplementary', 'personalized', 'excursions', 
+            'interactive', 'assessment'];
+        
+        checkboxes.forEach(function(checkboxId) {
+            var checkbox = document.getElementById(checkboxId);
+            if (checkbox) {
+                checkbox.addEventListener('change', function() {
+                    self.calculatePrice();
+                });
+            }
+        });
+    },
+    
+    // Обновление заявки
+    updateOrder: async function(orderId) {
+        if (!this.selectedItem) {
+            Utils.showNotification('Ошибка: не выбран курс или репетитор'
+                , 'error');
+            return;
+        }
+        
+        // Собираем данные формы
+        const startDateEl = document.getElementById('startDate');
+        const startTimeEl = document.getElementById('startTime');
+        const personsEl = document.getElementById('persons');
+        
+        if (!startDateEl || !startTimeEl || !personsEl) {
+            Utils.showNotification('Заполните все поля', 'error');
+            return;
+        }
+        
+        if (!startDateEl.value || !startTimeEl.value) {
+            Utils.showNotification('Выберите дату и время', 'error');
+            return;
+        }
+        
+        const supplementaryEl = document.getElementById('supplementary');
+        const personalizedEl = document.getElementById('personalized');
+        const excursionsEl = document.getElementById('excursions');
+        const interactiveEl = document.getElementById('interactive');
+        const assessmentEl = document.getElementById('assessment');
+        
+        // Собираем обновляемые поля
+        const formData = {
+            date_start: startDateEl.value,
+            time_start: startTimeEl.value,
+            persons: parseInt(personsEl.value) || 1,
+            price: this.calculatePrice(),
+            early_registration: this.checkEarlyRegistration(startDateEl.value),
+            group_enrollment: parseInt(personsEl.value) >= 5,
+            intensive_course: this.itemType === 'course' && 
+                        (this.selectedItem.week_length || 0) >= 5,
+            supplementary: supplementaryEl ? supplementaryEl.checked : false,
+            personalized: personalizedEl ? personalizedEl.checked : false,
+            excursions: excursionsEl ? excursionsEl.checked : false,
+            assessment: false,
+            interactive: interactiveEl ? interactiveEl.checked : false,
+            assessment: assessmentEl ? assessmentEl.checked : false,
+        };
+        
+        console.log('Обновляем заявку #' + orderId, formData);
+        
+        try {
+            // Используем updateOrder (PUT)
+            await Api.updateOrder(orderId, formData);
+            
+            // Закрываем модальное окно
+            const modalElement = document.getElementById('orderModal');
+            if (modalElement) {
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) modal.hide();
+            }
+            
+            // Обновляем личный кабинет
+            if (typeof Cabinet !== 'undefined' && Cabinet.loadOrders) {
+                Cabinet.loadOrders();
+            }
+            
+            Utils.showNotification('Заявка успешно обновлена!', 'success');
+            
+        } catch (error) {
+            console.error('Ошибка обновления заявки:', error);
+            const errorMsg = error.message || 'Неизвестная ошибка';
+            Utils.showNotification('Ошибка: ' + errorMsg, 'error');
+        }
+    },
+
     setupEventListeners: function() {
         console.log('Order system initialized');
     }

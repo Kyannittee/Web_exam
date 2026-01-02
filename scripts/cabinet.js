@@ -7,6 +7,15 @@ const Cabinet = {
     
     // Инициализация личного кабинета
     init: function() {
+        console.log('Инициализация личного кабинета...');
+        
+        if (typeof Components !== 'undefined' && Components.init) {
+            Components.init();
+            console.log('Шапка и футер инициализированы');
+        } else {
+            console.error('Components не загружен или нет метода init!');
+        }
+        
         this.setupEventListeners();
         this.loadOrders();
     },
@@ -16,28 +25,69 @@ const Cabinet = {
         try {
             const orders = await Api.getOrders();
             
-            // Преобразуем данные API в наш формат
-            const formattedOrders = orders.map(order => ({
-                id: order.id,
-                courseName: order.course_id ? 
-                    `Курс #${order.course_id}` : 
-                    `Репетитор #${order.tutor_id}`,
-                tutorName: 'Загружается...', // Можно доп. запросом получить имя
-                dateStart: order.date_start,
-                timeStart: order.time_start,
-                price: order.price,
-                status: 'active'
-            }));
+            if (orders.length === 0) {
+                this.displayOrders([]);
+                return;
+            }
+            
+            // Загружаем дополнительную информацию для каждой заявки
+            const formattedOrders = [];
+            
+            for (let i = 0; i < orders.length; i++) {
+                const order = orders[i];
+                let courseName = 'Неизвестный курс';
+                let tutorName = 'Неизвестный репетитор';
+                let itemName = '';
+                
+                // Загружаем информацию о курсе или репетиторе
+                if (order.course_id) {
+                    try {
+                        const course = await Api.getCourse(order.course_id);
+                        courseName = course.name || 'Курс #' + order.course_id;
+                        itemName = courseName;
+                        tutorName = course.teacher || 'Преподаватель';
+                    } catch (error) {
+                        console.warn('Не удалось загрузить курс:', error);
+                        courseName = 'Курс #' + order.course_id;
+                        itemName = courseName;
+                    }
+                } else if (order.tutor_id) {
+                    try {
+                        const tutor = await Api.getTutor(order.tutor_id);
+                        tutorName = tutor.name 
+                        || 'Репетитор #' + order.tutor_id;
+                        itemName = tutorName;
+                        courseName = 'Индивидуальные занятия';
+                    } catch (error) {
+                        console.warn('Не удалось загрузить репетитора:', error);
+                        tutorName = 'Репетитор #' + order.tutor_id;
+                        itemName = tutorName;
+                    }
+                }
+                
+                formattedOrders.push({
+                    id: order.id,
+                    courseName: itemName,
+                    tutorName: tutorName,
+                    dateStart: order.date_start,
+                    timeStart: order.time_start ? order.time_start
+                        .substring(0, 5) : '',
+                    price: order.price || 0,
+                    status: 'active',
+                    orderData: order // Сохраняем исходные данные
+                });
+            }
             
             this.displayOrders(formattedOrders);
             
         } catch (error) {
-            console.log('Используем демо-данные');
+            console.log('Ошибка загрузки заявок, используем демо-данные:'
+                , error);
             this.displayOrders(this.getMockOrders());
         }
     },
     
-    // Временные данные (потом заменим на реальные с API)
+    // Временные данные 
     getMockOrders: function() {
         return [
             {
@@ -159,6 +209,7 @@ const Cabinet = {
     
     // Форматирование цены
     formatPrice: function(price) {
+        if (!price) return '0';
         return price.toLocaleString('ru-RU');
     },
     
@@ -219,21 +270,166 @@ const Cabinet = {
         });
     },
     
-    // Методы для кнопок (заглушки)
-    showOrderDetails: function(orderId) {
-        Utils.showNotification(
-            'Детали заявки #' + orderId, 
-            'info'
-        );
+    // Методы для кнопок (уже не заглушки)
+    showOrderDetails: async function(orderId) {
+        try {
+            const order = await Api.getOrder(orderId);
+            
+            let itemInfo = '';
+            if (order.course_id) {
+                const course = await Api.getCourse(order.course_id);
+                itemInfo = `<strong>Курс:</strong> 
+                ${course.name || 'Курс #' + order.course_id}<br>
+                        <strong>Преподаватель:</strong> 
+                        ${course.teacher || 'Преподаватель'}`;
+            } else {
+                const tutor = await Api.getTutor(order.tutor_id);
+                itemInfo = `<strong>Репетитор:</strong> 
+                ${tutor.name || 'Репетитор #' + order.tutor_id}`;
+            }
+            
+            // Форматируем цену 
+            const formattedPrice = this.formatPrice(order.price || 0);
+            const formattedDate = this.formatDate(order.date_start);
+            const timeStart = order.time_start 
+                ? order.time_start.substring(0, 5) : '';
+            
+            // Создаем модальное окно с деталями
+            const modalHTML = `
+                <div class="modal fade" id="orderDetailsModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                Детали заявки #${orderId}</h5>
+                                <button type="button" class="btn-close" 
+                                data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    ${itemInfo}
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Дата начала:</strong>
+                                        <br>${formattedDate}</p>
+                                        <p><strong>Время:</strong>
+                                        <br>${timeStart}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Кол-во студентов:</strong>
+                                        <br>${order.persons || 1}</p>
+                                        <p><strong>Стоимость:</strong>
+                                        <br>${formattedPrice} ₽</p>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <h6>Дополнительные опции:</h6>
+                                    <ul class="list-unstyled">
+                                        ${order.early_registration ?
+        '<li>Ранняя регистрация (-10%)</li>' : ''}
+                                        ${order.group_enrollment ? 
+        '<li>Групповая запись (-15%)</li>' : ''}
+                                        ${order.intensive_course ? 
+        '<li>Интенсивный курс (+20%)</li>' : ''}
+                                        ${order.supplementary ? 
+        '<li>Доп. материалы</li>' : ''}
+                                        ${order.personalized ? 
+        '<li>Индивидуальные занятия</li>' : ''}
+                                        ${!order.early_registration 
+                                            && !order.group_enrollment 
+                                            && !order.intensive_course && 
+                                        !order.supplementary 
+                                        && !order.personalized 
+                                        && !order.excursions && 
+                                        !order.interactive 
+                                        && !order.assessment ? 
+        '<li class="text-muted">Нет' +
+                                        'дополнительных опций</li>' : ''}
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" 
+                                data-bs-dismiss="modal">Закрыть</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        
+            // Добавляем модальное окно на страницу
+            const modalsContainer = document.getElementById('modals-container');
+            if (!modalsContainer) {
+                const container = document.createElement('div');
+                container.id = 'modals-container';
+                document.body.appendChild(container);
+            }
+            
+            // Удаляем предыдущее модальное окно если есть
+            const existingModal = document.getElementById('orderDetailsModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            modalsContainer.innerHTML += modalHTML;
+            
+            // Показываем модальное окно
+            const modalElement = document.getElementById('orderDetailsModal');
+            if (modalElement) {
+                const modal = new bootstrap.Modal(modalElement);
+                
+                // Удаляем модальное окно при закрытии
+                modalElement.addEventListener('hidden.bs.modal', function() {
+                    setTimeout(() => {
+                        if (modalElement && modalElement.parentNode) {
+                            modalElement.parentNode.removeChild(modalElement);
+                        }
+                    }, 300);
+                });
+                
+                modal.show();
+            }
+            
+        } catch (error) {
+            console.error('Ошибка загрузки деталей заявки:', error);
+            Utils.showNotification('Не удалось' + 
+                'загрузить детали заявки', 'error');
+        }
     },
     
-    editOrder: function(orderId) {
-        if (typeof Order !== 'undefined') {
-            // Будет работать когда добавим метод
-            Utils.showNotification(
-                'Редактирование заявки #' + orderId, 
-                'info'
-            );
+    editOrder: async function(orderId) {
+        try {
+            // Загружаем заявку
+            const order = await Api.getOrder(orderId);
+            
+            // Загружаем информацию о курсе/репетиторе
+            let item;
+            let type;
+            
+            if (order.course_id) {
+                item = await Api.getCourse(order.course_id);
+                type = 'course';
+            } else {
+                item = await Api.getTutor(order.tutor_id);
+                type = 'tutor';
+            }
+            
+            // Добавляем исходные данные заявки к объекту
+            item.orderData = order;
+            
+            // Открываем модальное окно через Order
+            if (typeof Order !== 'undefined' && Order.openEditModal) {
+                Order.openEditModal(orderId, item, type);
+            } else {
+                // Если Order не загружен, показываем простую форму
+                this.showSimpleEditForm(orderId, order, item, type);
+            }
+            
+        } catch (error) {
+            console.error('Ошибка загрузки заявки для редактирования:', error);
+            Utils.showNotification('Не удалось загрузить' + 
+                'заявку для редактирования', 'error');
         }
     },
     

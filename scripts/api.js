@@ -36,14 +36,6 @@ const Api = {
         } catch (error) {
             console.error(`Ошибка API (${endpoint}):`, error);
             
-            // Показываем уведомление только если Utils доступен
-            if (typeof Utils !== 'undefined') {
-                Utils.showNotification(
-                    `Ошибка: ${error.message}`, 
-                    'error'
-                );
-            }
-            
             throw error;
         }
     },
@@ -81,13 +73,6 @@ const Api = {
             orderData
         );
         
-        if (typeof Utils !== 'undefined') {
-            Utils.showNotification(
-                'Заявка успешно создана!', 
-                'success'
-            );
-        }
-        
         return result;
     },
     
@@ -99,13 +84,6 @@ const Api = {
             orderData
         );
         
-        if (typeof Utils !== 'undefined') {
-            Utils.showNotification(
-                'Заявка успешно обновлена!', 
-                'success'
-            );
-        }
-        
         return result;
     },
     
@@ -116,14 +94,6 @@ const Api = {
             'DELETE'
         );
         
-        if (typeof Utils !== 'undefined') {
-            Utils.showNotification(
-                'Заявка успешно удалена!', 
-                'success'
-            );
-        }
-        
-        return result;
     },
     
     // Получение заявки по ID

@@ -66,14 +66,6 @@
                     console.log('API работает! Загружено курсов:', 
                         courses.length);
                     
-                    // Показываем уведомление
-                    if (typeof Utils !== 'undefined') {
-                        Utils.showNotification(
-                            `Загружено ${courses.length} курсов`, 
-                            'success'
-                        );
-                    }
-                    
                 } catch (error) {
                     console.error('Ошибка подключения к API:', error);
                     

@@ -2,6 +2,7 @@
 
 // Объект Components для хранения всех компонентов
 const Components = {
+
     // Название школы
     schoolName: 'EasyLang',
     
@@ -16,52 +17,89 @@ const Components = {
     // Шапка сайта
     header: function() {
         const activeClass = this.isActive('index.html');
-        return `
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary-dark">
-    <div class="container">
-        <a class="navbar-brand" href="index.html">
-            <i class="bi bi-translate me-2"></i>
-            <span class="fw-bold">${this.schoolName}</span>
-        </a>
+        const isCabinetPage = this.isActive('cabinet.html');
         
-        <button class="navbar-toggler" type="button" 
-            data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item">
-                    <a class="nav-link ${activeClass}" href="index.html">
-                        Главная
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#courses">
-                        Курсы
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#tutors">
-                        Репетиторы
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#about">
-                        О нас
-                    </a>
-                </li>
-            </ul>
+        // Если мы в личном кабинете, показываем упрощенное меню
+        if (isCabinetPage) {
+            return `
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary-dark">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="bi bi-translate me-2"></i>
+                <span class="fw-bold">${this.schoolName}</span>
+            </a>
             
-            <div class="d-flex">
-                <a href="cabinet.html" class="btn btn-accent">
-                    <i class="bi bi-person-circle me-1"></i> 
-                    Личный кабинет
-                </a>
+            <button class="navbar-toggler" type="button" 
+                data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">
+                            <i class="bi bi-house me-1"></i> Главная
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="cabinet.html">
+                            <i class="bi bi-person-circle 
+                            me-1"></i> Личный кабинет
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
-    </div>
-</nav>`;
+    </nav>`;
+        }
+        
+        // Для главной страницы - полное меню
+        return `
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary-dark">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="bi bi-translate me-2"></i>
+                <span class="fw-bold">${this.schoolName}</span>
+            </a>
+            
+            <button class="navbar-toggler" type="button" 
+                data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link ${activeClass}" href="index.html">
+                            Главная
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#courses">
+                            Курсы
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#tutors">
+                            Репетиторы
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#advantages">
+                            О нас
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="d-flex">
+                    <a href="cabinet.html" class="btn btn-accent">
+                        <i class="bi bi-person-circle me-1"></i> 
+                        Личный кабинет
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>`;
     },
     
     // Футер сайта
@@ -142,6 +180,7 @@ const Components = {
         const personalizedChecked = data.personalized ? 'checked' : '';
         const excursionsChecked = data.excursions ? 'checked' : '';
         const interactiveChecked = data.interactive ? 'checked' : '';
+        const assessmentChecked = data.assessment ? 'checked' : '';
         
         // Длительность курса
         const totalLength = course.total_length || 1;
@@ -275,6 +314,15 @@ const Components = {
                                             <label class="form-check-label" 
                                             for="interactive">
                                                 Интерактивная платформа (+50%)
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" 
+                                            type="checkbox" 
+                                        id="assessment" ${assessmentChecked}>
+                                            <label class="form-check-label" 
+                                            for="assessment">
+                                        Оценка уровня владения языком (+300₽)
                                             </label>
                                         </div>
                                     </div>
