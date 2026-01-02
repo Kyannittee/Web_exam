@@ -1180,7 +1180,8 @@ const Main = {
             
             // Создаем HTML для модального окна
             const modalHTML = `
-            <div class="modal fade" id="tutorDetailsModal" tabindex="-1">
+            <div class="modal fade tutor-profile-modal" 
+            id="tutorDetailsModal" tabindex="-1">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -1192,10 +1193,8 @@ const Main = {
                             <div class="text-center mb-4">
                                 <img src="${avatar}" 
                                     alt="${tutor.name}"
-                                    class="rounded-circle mb-3"
-                                    style="width: 120px; height: 120px; 
-                                    object-fit: cover; border: 
-                                    4px solid #dee2e6;">
+                                    class="rounded-circle mb-3 
+                                    tutor-avatar-large">
                                 <h4>${tutor.name || 'Без имени'}</h4>
                                 <span class="badge bg-info fs-6">
                                     ${tutor.language_level || 'Не указан'}
@@ -1204,55 +1203,72 @@ const Main = {
                             
                             <div class="row">
                                 <div class="col-md-6">
-                                    <h6><i class="bi bi-clock-history 
-                                    me-2"></i>Опыт работы</h6>
-                                    <p class="mb-3">${tutor.work_experience 
-                                        || 0} ${this.getExperienceWord(tutor
-    .work_experience || 0)}</p>
+                                    <h6>
+                                        <i class="bi bi-clock-history 
+                                        tutor-profile-icon"></i>
+                                        Опыт работы
+                                    </h6>
+                                    <p class="mb-3">
+                                        ${tutor.work_experience || 0} 
+                                        ${this.getExperienceWord(tutor
+        .work_experience || 0)}
+                                    </p>
                                     
-                                    <h6><i class="bi bi-currency-dollar
-                                     me-2"></i>Стоимость</h6>
-                                    <p class="mb-3"><strong>
-                                    ${(tutor.price_per_hour 
-                                        || 0).toLocaleString('ru-RU')} 
-                                        ₽/час</strong></p>
+                                    <h6>
+                                        <i class="bi bi-currency-dollar 
+                                        tutor-profile-icon"></i>
+                                        Стоимость
+                                    </h6>
+                                    <p class="mb-3">
+                                        <strong>
+                                            ${(tutor.price_per_hour || 0)
+        .toLocaleString('ru-RU')} ₽/час
+                                        </strong>
+                                    </p>
                                 </div>
                                 <div class="col-md-6">
-                                    <h6><i class="bi bi-translate 
-                                    me-2"></i>Преподает языки</h6>
+                                    <h6>
+                                        <i class="bi bi-translate 
+                                        tutor-profile-icon"></i>
+                                        Преподает языки
+                                    </h6>
                                     <p class="mb-3">
                                         ${(tutor.languages_offered 
                                             && Array.isArray(tutor
-                                                .languages_offered)) ? 
-        tutor.languages_offered.map(function(lang) {
+                                                .languages_offered)) 
+        ? tutor.languages_offered.map(function(lang) {
             return `<span class="badge bg-primary me-1 mb-1">${lang}</span>`;
-        }).join('') : 
-        'Не указаны'
-}
+        }).join('') 
+        : 'Не указаны'}
                                     </p>
                                     
-                                    <h6><i class="bi bi-chat-dots 
-                                    me-2"></i>Владеет языками</h6>
+                                    <h6>
+                                        <i class="bi bi-chat-dots 
+                                        tutor-profile-icon"></i>
+                                        Владеет языками
+                                    </h6>
                                     <p class="mb-0">
                                         ${(tutor.languages_spoken 
                                             && Array.isArray(tutor
-                                                .languages_spoken)) ? 
-        tutor.languages_spoken.map(function(lang) {
-            return `<span class="badge bg-secondary me-1 mb-1">${lang}</span>`;
-        }).join('') : 
-        'Не указаны'
-}
+                                                .languages_spoken)) ? tutor
+            .languages_spoken.map(function(lang) {
+                return `<span class="badge bg-secondary 
+                                                me-1 mb-1">${lang}</span>`;
+            }).join('') 
+        : 'Не указаны'}
                                     </p>
                                 </div>
                             </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" 
-                            data-bs-dismiss="modal">Закрыть</button>
+                            data-bs-dismiss="modal">
+                                Закрыть
+                            </button>
                             <button type="button" class="btn btn-accent" 
                             onclick="Main.orderTutor(${tutor.id})">
-                                <i class="bi bi-calendar-plus 
-                                me-1"></i>Записаться
+                                <i class="bi bi-calendar-plus me-1"></i>
+                                Записаться
                             </button>
                         </div>
                     </div>
@@ -1301,7 +1317,7 @@ const Main = {
                     return t.id == tutorId; 
                 });
             if (tutor) {
-                alert('Информация о репетиторе:\n\n👤 Имя: ' + tutor.name + 
+                alert('Информация о репетиторе:\n\n Имя: ' + tutor.name + 
                     '\n Опыт: ' + tutor.work_experience + ' лет' +
                     '\n Языки: ' + 
                     (tutor.languages_offered ? tutor.languages_offered
@@ -1312,6 +1328,104 @@ const Main = {
         }
     },
     
+    showCourseDetails: async function(courseId) {
+        try {
+            const course = await Api.getCourse(courseId);
+            if (!course) return;
+            
+            const modalHTML = `
+            <div class="modal fade" id="courseDetailsModal">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title">
+                                <i class="bi bi-book me-2"></i>
+                                ${course.name}
+                            </h5>
+                            <button class="btn-close btn-close-white" 
+                            data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <p class="mb-1">
+                                    <strong>Преподаватель</strong></p>
+                                    <p>${course.teacher}</p>
+                                </div>
+                                <div class="col-6">
+                                    <p class="mb-1"><strong>Уровень</strong></p>
+                                    <p><span class="badge bg-info">
+                                    ${course.level}</span></p>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <p class="mb-1"><strong>
+                                    Длительность</strong></p>
+                                    <p>${course.total_length} недель</p>
+                                </div>
+                                <div class="col-6">
+                                    <p class="mb-1"><strong>
+                                    Стоимость</strong></p>
+                                    <p class="text-success fw-bold">
+                                    ${course.course_fee_per_hour} ₽/час</p>
+                                </div>
+                            </div>
+                            <p class="mb-1"><strong>Описание</strong></p>
+                            <p class="text-muted">${course.description}</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" 
+                            data-bs-dismiss="modal">Закрыть</button>
+                            <button class="btn btn-accent" 
+                            onclick="Main.orderCourse(
+                            ${course.id})">Записаться</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+            
+            // Тот же код что в showTutorDetails() для показа модалки
+            var modalsContainer = document.getElementById('modals-container');
+            if (!modalsContainer) {
+                modalsContainer = document.createElement('div');
+                modalsContainer.id = 'modals-container';
+                document.body.appendChild(modalsContainer);
+            }
+            
+            var existingModal = document.getElementById('courseDetailsModal');
+            if (existingModal) existingModal.remove();
+            
+            modalsContainer.innerHTML += modalHTML;
+            
+            var modalElement = document.getElementById('courseDetailsModal');
+            if (modalElement) {
+                var modal = new bootstrap.Modal(modalElement);
+                modalElement.addEventListener('hidden.bs.modal', function() {
+                    setTimeout(function() {
+                        if (modalElement && modalElement.parentNode) {
+                            modalElement.parentNode.removeChild(modalElement);
+                        }
+                    }, 300);
+                });
+                modal.show();
+            }
+            
+        } catch (error) {
+            console.error(error);
+            // Fallback на обычный alert
+            const course = this.allCourses.find(c => c.id == courseId);
+            if (course) {
+                alert(`${course.name}\n\n
+                    ${course.teacher}\n
+                    ${course.level}\n
+                    ${course.total_length} недель\n
+                    ${course.course_fee_per_hour} ₽/час\n\n
+                    ${course.description}`);
+            }
+        }
+    },
+
     orderCourse: async function(courseId) {
         console.log('=== Запись на курс ===');
         console.log('ID курса:', courseId);
@@ -1354,3 +1468,4 @@ const Main = {
 
 // Делаем Main доступным глобально
 window.Main = Main;
+
