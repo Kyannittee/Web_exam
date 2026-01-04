@@ -143,6 +143,7 @@ const Order = {
         var form = document.getElementById('orderForm');
         var dateSelect = document.getElementById('startDate');
         var personsInput = document.getElementById('persons');
+        var timeSelect = document.getElementById('startTime');
         
         if (form) {
             form.addEventListener('submit', function(e) {
@@ -161,6 +162,13 @@ const Order = {
         if (personsInput) {
             personsInput.addEventListener('input', function() {
                 self.calculatePrice();
+            });
+        }
+
+        if (timeSelect) {
+            timeSelect.addEventListener('change', function() {
+                self.calculatePrice();
+                self.updateEndDate();
             });
         }
         
